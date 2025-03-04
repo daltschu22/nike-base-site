@@ -12,8 +12,17 @@ def create_app():
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object(get_config())
     
-    # Ensure the instance folder exists
-    os.makedirs(app.instance_path, exist_ok=True)
+    # Check if we're in Vercel environment
+    in_vercel = os.environ.get('VERCEL_ENV') is not None
+    
+    # Only try to create instance directory if not in Vercel (which has read-only filesystem)
+    if not in_vercel:
+        try:
+            # Ensure the instance folder exists
+            os.makedirs(app.instance_path, exist_ok=True)
+        except OSError as e:
+            logger.warning(f"Could not create instance directory: {str(e)}")
+            # Continue anyway as this is not critical
 
     with app.app_context():
         # Import parts of our application

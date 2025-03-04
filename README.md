@@ -125,6 +125,13 @@ npm i -g vercel
    - `GOOGLE_MAPS_API_KEY`: your-google-maps-api-key
    - `VERCEL_ENV`: production
 
+### Vercel Deployment Considerations
+
+- **Read-only filesystem**: Vercel uses a read-only filesystem for serverless functions. The application is designed to handle this limitation by:
+  - Detecting the Vercel environment and skipping directory creation operations
+  - Using in-memory storage for data when running on Vercel
+  - Automatically loading data on startup without requiring file system writes
+
 ### Database Considerations
 
 The application uses different database adapters depending on the environment:
