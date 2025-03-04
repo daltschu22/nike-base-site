@@ -1,0 +1,116 @@
+/* Custom styles for Nike Missile Base Map */
+
+/* General styles */
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.4rem;
+}
+
+.navbar-dark .navbar-brand i {
+    color: #ff5252;
+    margin-right: 8px;
+}
+
+/* Map container */
+#map-container {
+    margin-bottom: 30px;
+}
+
+/* Info windows */
+.info-window {
+    padding: 5px;
+    max-width: 300px;
+}
+
+.info-window h3 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+}
+
+/* Site info panel */
+#site-info h5 {
+    margin-bottom: 15px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+}
+
+#site-info p {
+    margin-bottom: 8px;
+}
+
+/* Filters panel */
+#filters h5 {
+    margin-bottom: 15px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+}
+
+/* Footer */
+footer {
+    margin-top: 50px;
+}
+
+footer a {
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    .btn {
+        font-size: 0.9rem;
+    }
+}
+
+/* Loading spinner */
+.loading .spinner-border {
+    width: 2rem;
+    height: 2rem;
+} 

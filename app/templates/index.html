@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Nike Missile Base Map{% endblock %}
+
+{% block head %}
+<style>
+    #map-container {
+        position: relative;
+        height: calc(100vh - 180px);
+        min-height: 500px;
+    }
+    
+    #map {
+        height: 100%;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    #filters {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1;
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        max-width: 300px;
+    }
+    
+    #site-info {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        z-index: 1;
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        max-width: 400px;
+        display: none;
+    }
+    
+    .loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        z-index: 2;
+    }
+    
+    @media (max-width: 768px) {
+        #filters, #site-info {
+            position: relative;
+            top: auto;
+            left: auto;
+            right: auto;
+            bottom: auto;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        #map-container {
+            height: 500px;
+        }
+    }
+</style>
+<!-- Add Leaflet CSS for fallback map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Nike Missile Base Map</h1>
+            <p class="lead">Explore the locations of Nike missile sites across the United States. Click on a marker to view details about each site.</p>
+            
+            <div class="d-flex justify-content-end mb-3">
+                <button id="import-data" class="btn btn-primary me-2">
+                    <i class="fas fa-download"></i> Import Data
+                </button>
+                <button id="clear-data" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Clear Data
+                </button>
+            </div>
+            
+            <div id="map-container">
+                <div id="filters">
+                    <h5>Filters</h5>
+                    <div class="mb-3">
+                        <label for="state-filter" class="form-label">State:</label>
+                        <select id="state-filter" class="form-select form-select-sm">
+                            <option value="">All States</option>
+                            <!-- States will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="site-type-filter" class="form-label">Site Type:</label>
+                        <select id="site-type-filter" class="form-select form-select-sm">
+                            <option value="">All Types</option>
+                            <option value="Launch Area">Launch Area</option>
+                            <option value="Control Area">Control Area</option>
+                        </select>
+                    </div>
+                    <button id="apply-filters" class="btn btn-sm btn-primary">Apply Filters</button>
+                    <button id="reset-filters" class="btn btn-sm btn-secondary">Reset</button>
+                </div>
+                
+                <div id="site-info">
+                    <h5 id="site-name">Site Name</h5>
+                    <p id="site-code"><strong>Code:</strong> <span></span></p>
+                    <p id="site-location"><strong>Location:</strong> <span></span></p>
+                    <p id="site-description"><strong>Description:</strong> <span></span></p>
+                    <p id="site-status"><strong>Status:</strong> <span></span></p>
+                    <a id="site-wiki" href="#" target="_blank" class="btn btn-sm btn-info">More Info</a>
+                    <button id="close-info" class="btn btn-sm btn-secondary">Close</button>
+                </div>
+                
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border text-primary me-3" role="status"></div>
+                        <span>Loading data...</span>
+                    </div>
+                </div>
+                
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JS for fallback map -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- Conditionally load Google Maps or use Leaflet as fallback -->
+{% if google_maps_api_key %}
+<!-- Google Maps JavaScript API -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initGoogleMap" async defer></script>
+<script>
+    let map;
+    let markers = [];
+    let sites = [];
+    let states = new Set();
+    let useGoogleMaps = true;
+    
+    // Initialize Google Maps
+    function initGoogleMap() {
+        // Create the map centered on the US
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: 39.8283, lng: -98.5795 },
+            zoom: 4,
+            mapTypeId: "terrain",
+            mapTypeControl: true,
+            mapTypeControlOptions: {
+                style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+            }
+        });
+        
+        // Load the sites data
+        loadSites();
+        
+        // Set up event listeners
+        document.getElementById("import-data").addEventListener("click", importData);
+        document.getElementById("clear-data").addEventListener("click", clearData);
+        document.getElementById("apply-filters").addEventListener("click", applyFilters);
+        document.getElementById("reset-filters").addEventListener("click", resetFilters);
+        document.getElementById("close-info").addEventListener("click", closeSiteInfo);
+    }
+    
+    // Add a marker for a site (Google Maps)
+    function addMarker(site) {
+        const position = {
+            lat: parseFloat(site.latitude) || 0,
+            lng: parseFloat(site.longitude) || 0
+        };
+        
+        const marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            title: site.name,
+            animation: google.maps.Animation.DROP
+        });
+        
+        // Add click event to show site info
+        marker.addListener("click", () => {
+            showSiteInfo(site);
+        });
+        
+        // Store the marker and associated site
+        markers.push({
+            marker: marker,
+            site: site
+        });
+    }
+    
+    // Clear all markers from the map (Google Maps)
+    function clearMarkers() {
+        markers.forEach(m => {
+            m.marker.setMap(null);
+        });
+        markers = [];
+    }
+</script>
+{% else %}
+<script>
+    let map;
+    let markers = [];
+    let sites = [];
+    let states = new Set();
+    let useGoogleMaps = false;
+    
+    // Initialize Leaflet Map (fallback when no Google Maps API key)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create the map centered on the US
+        map = L.map('map').setView([39.8283, -98.5795], 4);
+        
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Load the sites data
+        loadSites();
+        
+        // Set up event listeners
+        document.getElementById("import-data").addEventListener("click", importData);
+        document.getElementById("clear-data").addEventListener("click", clearData);
+        document.getElementById("apply-filters").addEventListener("click", applyFilters);
+        document.getElementById("reset-filters").addEventListener("click", resetFilters);
+        document.getElementById("close-info").addEventListener("click", closeSiteInfo);
+    });
+    
+    // Add a marker for a site (Leaflet)
+    function addMarker(site) {
+        const lat = parseFloat(site.latitude) || 0;
+        const lng = parseFloat(site.longitude) || 0;
+        
+        const marker = L.marker([lat, lng], {
+            title: site.name
+        }).addTo(map);
+        
+        // Add click event to show site info
+        marker.on('click', () => {
+            showSiteInfo(site);
+        });
+        
+        // Store the marker and associated site
+        markers.push({
+            marker: marker,
+            site: site
+        });
+    }
+    
+    // Clear all markers from the map (Leaflet)
+    function clearMarkers() {
+        markers.forEach(m => {
+            map.removeLayer(m.marker);
+        });
+        markers = [];
+    }
+</script>
+{% endif %}
+
+<script>
+    // Load sites from the API
+    function loadSites() {
+        showLoading(true);
+        
+        fetch('/api/sites')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    sites = data.sites;
+                    
+                    // Clear existing markers
+                    clearMarkers();
+                    
+                    // Add markers for each site
+                    sites.forEach(site => {
+                        addMarker(site);
+                        
+                        // Collect unique states for the filter
+                        if (site.state) {
+                            states.add(site.state);
+                        }
+                    });
+                    
+                    // Populate state filter dropdown
+                    populateStateFilter();
+                    
+                    // Show message if no sites found
+                    if (sites.length === 0) {
+                        alert("No Nike missile sites found in the database. Please import data first.");
+                    }
+                } else {
+                    console.error("Error loading sites:", data.error);
+                }
+                
+                showLoading(false);
+            })
+            .catch(error => {
+                console.error("Error fetching sites:", error);
+                showLoading(false);
+            });
+    }
+    
+    // Show site information panel
+    function showSiteInfo(site) {
+        document.getElementById("site-name").textContent = site.name;
+        document.getElementById("site-code").querySelector("span").textContent = site.site_code;
+        document.getElementById("site-location").querySelector("span").textContent = `${site.state} (${parseFloat(site.latitude).toFixed(4)}, ${parseFloat(site.longitude).toFixed(4)})`;
+        document.getElementById("site-description").querySelector("span").textContent = site.description || "No description available";
+        document.getElementById("site-status").querySelector("span").textContent = site.status || "Unknown";
+        
+        const wikiLink = document.getElementById("site-wiki");
+        if (site.wiki_url) {
+            wikiLink.href = site.wiki_url;
+            wikiLink.style.display = "inline-block";
+        } else {
+            wikiLink.style.display = "none";
+        }
+        
+        document.getElementById("site-info").style.display = "block";
+    }
+    
+    // Close the site information panel
+    function closeSiteInfo() {
+        document.getElementById("site-info").style.display = "none";
+    }
+    
+    // Populate the state filter dropdown
+    function populateStateFilter() {
+        const stateFilter = document.getElementById("state-filter");
+        
+        // Clear existing options (except the first one)
+        while (stateFilter.options.length > 1) {
+            stateFilter.remove(1);
+        }
+        
+        // Add options for each state
+        Array.from(states).sort().forEach(state => {
+            const option = document.createElement("option");
+            option.value = state;
+            option.textContent = state;
+            stateFilter.appendChild(option);
+        });
+    }
+    
+    // Apply filters to the map
+    function applyFilters() {
+        const stateFilter = document.getElementById("state-filter").value;
+        const siteTypeFilter = document.getElementById("site-type-filter").value;
+        
+        // Clear existing markers
+        clearMarkers();
+        
+        // Filter sites
+        const filteredSites = sites.filter(site => {
+            let matchesState = true;
+            let matchesType = true;
+            
+            if (stateFilter) {
+                matchesState = site.state && site.state.includes(stateFilter);
+            }
+            
+            if (siteTypeFilter) {
+                matchesType = site.site_type === siteTypeFilter;
+            }
+            
+            return matchesState && matchesType;
+        });
+        
+        // Add markers for filtered sites
+        filteredSites.forEach(site => {
+            addMarker(site);
+        });
+    }
+    
+    // Reset filters
+    function resetFilters() {
+        document.getElementById("state-filter").value = "";
+        document.getElementById("site-type-filter").value = "";
+        
+        // Reload all sites
+        loadSites();
+    }
+    
+    // Import data from Wikipedia
+    function importData() {
+        if (!confirm("This will import Nike missile site data from Wikipedia. Continue?")) {
+            return;
+        }
+        
+        showLoading(true);
+        
+        fetch('/api/import-data', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                loadSites();
+            } else {
+                alert(`Error: ${data.message || data.error}`);
+            }
+            
+            showLoading(false);
+        })
+        .catch(error => {
+            console.error("Error importing data:", error);
+            alert("An error occurred while importing data. Please try again.");
+            showLoading(false);
+        });
+    }
+    
+    // Clear all data
+    function clearData() {
+        if (!confirm("This will delete all Nike missile site data from the database. Continue?")) {
+            return;
+        }
+        
+        showLoading(true);
+        
+        fetch('/api/clear-data', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                loadSites();
+            } else {
+                alert(`Error: ${data.error}`);
+            }
+            
+            showLoading(false);
+        })
+        .catch(error => {
+            console.error("Error clearing data:", error);
+            alert("An error occurred while clearing data. Please try again.");
+            showLoading(false);
+        });
+    }
+    
+    // Show or hide loading indicator
+    function showLoading(show) {
+        document.getElementById("loading").style.display = show ? "block" : "none";
+    }
+</script>
+{% endblock %} 

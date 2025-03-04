@@ -1,0 +1,49 @@
+# Development files
+.env
+.env.example
+.git
+.gitignore
+.vscode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Documentation and other files not needed in production
+README.md
+LICENSE
+podman.sh
+Dockerfile
+.dockerignore
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# IDE specific files
+.idea/
+*.swp
+*.swo
+
+# Docker
+docker-compose.yml
+
+# Local development
+.env.local
+.env.development.local 

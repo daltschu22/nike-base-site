@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}About - Nike Missile Base Map{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <h1 class="mb-4">About Nike Missile Base Map</h1>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Project Overview</h2>
+                    <p class="card-text">
+                        The Nike Missile Base Map is an interactive web application that displays the locations of Nike missile sites across the United States. 
+                        This project aims to preserve the historical significance of these Cold War-era defensive installations by making their locations and information easily accessible.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Nike Missile System History</h2>
+                    <p class="card-text">
+                        The Nike missile system was a line of American anti-aircraft missile systems designed and deployed from the 1950s to the 1970s. 
+                        Named after the Greek goddess of victory, the Nike system was developed to defend against Soviet bomber attacks during the Cold War.
+                    </p>
+                    <p class="card-text">
+                        The system consisted of two primary components:
+                    </p>
+                    <ul>
+                        <li><strong>Launch Area:</strong> Where the missiles were stored and launched</li>
+                        <li><strong>Control Area:</strong> Where radar and computer systems for tracking targets and guiding missiles were located</li>
+                    </ul>
+                    <p class="card-text">
+                        The Nike system went through several iterations, including:
+                    </p>
+                    <ul>
+                        <li><strong>Nike Ajax:</strong> The first operational anti-aircraft missile system (1954)</li>
+                        <li><strong>Nike Hercules:</strong> An improved version with nuclear capability (1958)</li>
+                        <li><strong>Nike Zeus:</strong> An anti-ballistic missile system (never fully deployed)</li>
+                    </ul>
+                    <p class="card-text">
+                        By the 1970s, most Nike missile sites were decommissioned as they became obsolete with the development of intercontinental ballistic missiles (ICBMs) and changing military strategies.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Data Sources</h2>
+                    <p class="card-text">
+                        The data for this application is sourced from:
+                    </p>
+                    <ul>
+                        <li>
+                            <a href="https://en.wikipedia.org/wiki/List_of_Nike_missile_sites" target="_blank">
+                                Wikipedia: List of Nike missile sites
+                            </a>
+                        </li>
+                    </ul>
+                    <p class="card-text">
+                        The application uses a web scraper to extract site information, including coordinates, names, and descriptions from the Wikipedia page.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">How to Use the Map</h2>
+                    <ol>
+                        <li><strong>Import Data:</strong> Click the "Import Data" button to fetch Nike missile site data from Wikipedia.</li>
+                        <li><strong>Explore the Map:</strong> Navigate the map to see all Nike missile sites marked with pins.</li>
+                        <li><strong>View Site Details:</strong> Click on any marker to view detailed information about that site.</li>
+                        <li><strong>Filter Sites:</strong> Use the filters panel to narrow down sites by state or site type.</li>
+                        <li><strong>Learn More:</strong> Click the "More Info" button in the site details panel to visit the Wikipedia page.</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">Technical Information</h2>
+                    <p class="card-text">
+                        This application is built using:
+                    </p>
+                    <ul>
+                        <li><strong>Backend:</strong> Python with Flask framework</li>
+                        <li><strong>Database:</strong> SQLite with SQLAlchemy ORM</li>
+                        <li><strong>Frontend:</strong> HTML, CSS, JavaScript, Bootstrap 5</li>
+                        <li><strong>Mapping:</strong> Google Maps JavaScript API</li>
+                        <li><strong>Data Processing:</strong> BeautifulSoup for web scraping</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
