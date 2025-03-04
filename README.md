@@ -88,6 +88,50 @@ pip install -r requirements.txt
 flask run
 ```
 
+## Deployment to Vercel
+
+This application can be deployed to Vercel for hosting. The project includes configuration files for Vercel deployment.
+
+### Prerequisites for Vercel Deployment
+
+- [Vercel CLI](https://vercel.com/cli) installed
+- A Vercel account
+
+### Deployment Steps
+
+1. Make sure you have the Vercel CLI installed:
+
+```bash
+npm i -g vercel
+```
+
+2. Use the included deployment script:
+
+```bash
+# Deploy to preview environment
+./vercel.sh deploy
+
+# Deploy to production
+./vercel.sh deploy:prod
+
+# View logs
+./vercel.sh logs
+```
+
+3. Set up environment variables in the Vercel dashboard:
+   - `FLASK_APP`: run.py
+   - `FLASK_ENV`: production
+   - `SECRET_KEY`: your-secret-key
+   - `GOOGLE_MAPS_API_KEY`: your-google-maps-api-key
+   - `VERCEL_ENV`: production
+
+### Database Considerations
+
+When deploying to Vercel:
+- For development, the application uses SQLite
+- For production on Vercel, the application uses Vercel KV for data storage
+- The application will automatically detect the environment and use the appropriate database adapter
+
 ## Usage
 
 1. Start the application using one of the methods above
@@ -125,7 +169,10 @@ nike-base-site/
 ├── requirements.txt
 ├── run.py
 ├── Dockerfile
-└── podman.sh
+├── podman.sh
+├── vercel.sh
+├── vercel.json
+└── .vercelignore
 ```
 
 ## Data Source
