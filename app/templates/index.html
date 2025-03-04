@@ -140,76 +140,7 @@
 <!-- Leaflet JS for fallback map -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-<!-- Conditionally load Google Maps or use Leaflet as fallback -->
-{% if google_maps_api_key %}
-<!-- Google Maps JavaScript API -->
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initGoogleMap" async defer></script>
-<script>
-    let map;
-    let markers = [];
-    let sites = [];
-    let states = new Set();
-    let useGoogleMaps = true;
-    
-    // Initialize Google Maps
-    function initGoogleMap() {
-        // Create the map centered on the US
-        map = new google.maps.Map(document.getElementById("map"), {
-            center: { lat: 39.8283, lng: -98.5795 },
-            zoom: 4,
-            mapTypeId: "terrain",
-            mapTypeControl: true,
-            mapTypeControlOptions: {
-                style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-            }
-        });
-        
-        // Load the sites data
-        loadSites();
-        
-        // Set up event listeners
-        document.getElementById("import-data").addEventListener("click", importData);
-        document.getElementById("clear-data").addEventListener("click", clearData);
-        document.getElementById("apply-filters").addEventListener("click", applyFilters);
-        document.getElementById("reset-filters").addEventListener("click", resetFilters);
-        document.getElementById("close-info").addEventListener("click", closeSiteInfo);
-    }
-    
-    // Add a marker for a site (Google Maps)
-    function addMarker(site) {
-        const position = {
-            lat: parseFloat(site.latitude) || 0,
-            lng: parseFloat(site.longitude) || 0
-        };
-        
-        const marker = new google.maps.Marker({
-            position: position,
-            map: map,
-            title: site.name,
-            animation: google.maps.Animation.DROP
-        });
-        
-        // Add click event to show site info
-        marker.addListener("click", () => {
-            showSiteInfo(site);
-        });
-        
-        // Store the marker and associated site
-        markers.push({
-            marker: marker,
-            site: site
-        });
-    }
-    
-    // Clear all markers from the map (Google Maps)
-    function clearMarkers() {
-        markers.forEach(m => {
-            m.marker.setMap(null);
-        });
-        markers = [];
-    }
-</script>
-{% else %}
+<!-- Define common variables -->
 <script>
     let map;
     let markers = [];
@@ -217,59 +148,6 @@
     let states = new Set();
     let useGoogleMaps = false;
     
-    // Initialize Leaflet Map (fallback when no Google Maps API key)
-    document.addEventListener('DOMContentLoaded', function() {
-        // Create the map centered on the US
-        map = L.map('map').setView([39.8283, -98.5795], 4);
-        
-        // Add OpenStreetMap tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-        
-        // Load the sites data
-        loadSites();
-        
-        // Set up event listeners
-        document.getElementById("import-data").addEventListener("click", importData);
-        document.getElementById("clear-data").addEventListener("click", clearData);
-        document.getElementById("apply-filters").addEventListener("click", applyFilters);
-        document.getElementById("reset-filters").addEventListener("click", resetFilters);
-        document.getElementById("close-info").addEventListener("click", closeSiteInfo);
-    });
-    
-    // Add a marker for a site (Leaflet)
-    function addMarker(site) {
-        const lat = parseFloat(site.latitude) || 0;
-        const lng = parseFloat(site.longitude) || 0;
-        
-        const marker = L.marker([lat, lng], {
-            title: site.name
-        }).addTo(map);
-        
-        // Add click event to show site info
-        marker.on('click', () => {
-            showSiteInfo(site);
-        });
-        
-        // Store the marker and associated site
-        markers.push({
-            marker: marker,
-            site: site
-        });
-    }
-    
-    // Clear all markers from the map (Leaflet)
-    function clearMarkers() {
-        markers.forEach(m => {
-            map.removeLayer(m.marker);
-        });
-        markers = [];
-    }
-</script>
-{% endif %}
-
-<script>
     // Load sites from the API
     function loadSites() {
         showLoading(true);
@@ -456,4 +334,124 @@
         document.getElementById("loading").style.display = show ? "block" : "none";
     }
 </script>
+
+<!-- Conditionally load Google Maps or use Leaflet as fallback -->
+{% if google_maps_api_key %}
+<!-- Google Maps JavaScript API -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initGoogleMap" async defer></script>
+<script>
+    // Set Google Maps as the map provider
+    useGoogleMaps = true;
+    
+    // Initialize Google Maps
+    function initGoogleMap() {
+        // Create the map centered on the US
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: 39.8283, lng: -98.5795 },
+            zoom: 4,
+            mapTypeId: "terrain",
+            mapTypeControl: true,
+            mapTypeControlOptions: {
+                style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+            }
+        });
+        
+        // Load the sites data
+        loadSites();
+        
+        // Set up event listeners
+        document.getElementById("import-data").addEventListener("click", importData);
+        document.getElementById("clear-data").addEventListener("click", clearData);
+        document.getElementById("apply-filters").addEventListener("click", applyFilters);
+        document.getElementById("reset-filters").addEventListener("click", resetFilters);
+        document.getElementById("close-info").addEventListener("click", closeSiteInfo);
+    }
+    
+    // Add a marker for a site (Google Maps)
+    function addMarker(site) {
+        const position = {
+            lat: parseFloat(site.latitude) || 0,
+            lng: parseFloat(site.longitude) || 0
+        };
+        
+        const marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            title: site.name,
+            animation: google.maps.Animation.DROP
+        });
+        
+        // Add click event to show site info
+        marker.addListener("click", () => {
+            showSiteInfo(site);
+        });
+        
+        // Store the marker and associated site
+        markers.push({
+            marker: marker,
+            site: site
+        });
+    }
+    
+    // Clear all markers from the map (Google Maps)
+    function clearMarkers() {
+        markers.forEach(m => {
+            m.marker.setMap(null);
+        });
+        markers = [];
+    }
+</script>
+{% else %}
+<script>
+    // Initialize Leaflet Map (fallback when no Google Maps API key)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create the map centered on the US
+        map = L.map('map').setView([39.8283, -98.5795], 4);
+        
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Load the sites data
+        loadSites();
+        
+        // Set up event listeners
+        document.getElementById("import-data").addEventListener("click", importData);
+        document.getElementById("clear-data").addEventListener("click", clearData);
+        document.getElementById("apply-filters").addEventListener("click", applyFilters);
+        document.getElementById("reset-filters").addEventListener("click", resetFilters);
+        document.getElementById("close-info").addEventListener("click", closeSiteInfo);
+    });
+    
+    // Add a marker for a site (Leaflet)
+    function addMarker(site) {
+        const lat = parseFloat(site.latitude) || 0;
+        const lng = parseFloat(site.longitude) || 0;
+        
+        const marker = L.marker([lat, lng], {
+            title: site.name
+        }).addTo(map);
+        
+        // Add click event to show site info
+        marker.on('click', () => {
+            showSiteInfo(site);
+        });
+        
+        // Store the marker and associated site
+        markers.push({
+            marker: marker,
+            site: site
+        });
+    }
+    
+    // Clear all markers from the map (Leaflet)
+    function clearMarkers() {
+        markers.forEach(m => {
+            map.removeLayer(m.marker);
+        });
+        markers = [];
+    }
+</script>
+{% endif %}
 {% endblock %} 
