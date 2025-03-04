@@ -131,8 +131,7 @@ class SQLiteAdapter(DatabaseAdapter):
         if db_path is None:
             # Use the instance folder for the database
             self.db_path = os.path.join(current_app.instance_path, 'nike_sites.db')
-            # Ensure the instance folder exists
-            os.makedirs(current_app.instance_path, exist_ok=True)
+            # Don't try to create directories - they should already exist in local dev
         else:
             self.db_path = db_path
         
@@ -440,9 +439,8 @@ class VercelKVAdapter(DatabaseAdapter):
 
 def get_db():
     """Get the appropriate database adapter based on the environment"""
-    if os.environ.get('VERCEL_ENV') == 'production':
-        # Use InMemoryAdapter for Vercel production environment
-        # This can be changed to VercelKVAdapter when ready to use Vercel KV
+    # Always use InMemoryAdapter for Vercel environment
+    if os.environ.get('VERCEL_ENV') is not None:
         return InMemoryAdapter()
     else:
         return SQLiteAdapter() 

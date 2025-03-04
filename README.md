@@ -128,9 +128,10 @@ npm i -g vercel
 ### Vercel Deployment Considerations
 
 - **Read-only filesystem**: Vercel uses a read-only filesystem for serverless functions. The application is designed to handle this limitation by:
-  - Detecting the Vercel environment and skipping directory creation operations
+  - Avoiding any filesystem operations completely
   - Using in-memory storage for data when running on Vercel
   - Automatically loading data on startup without requiring file system writes
+  - Not attempting to create any directories or files
 
 ### Database Considerations
 

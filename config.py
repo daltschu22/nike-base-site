@@ -1,8 +1,10 @@
 import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Only load dotenv if not in Vercel environment
+if os.environ.get('VERCEL_ENV') is None:
+    from dotenv import load_dotenv
+    # Load environment variables from .env file
+    load_dotenv()
 
 class Config:
     """Base configuration."""
