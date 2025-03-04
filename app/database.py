@@ -47,6 +47,83 @@ class DatabaseAdapter(ABC):
         """Import multiple sites at once"""
         pass
 
+class InMemoryAdapter(DatabaseAdapter):
+    """In-memory database adapter for simple deployments"""
+    
+    # Class variable to store data across requests
+    _sites = []
+    _initialized = False
+    
+    def __init__(self):
+        logger.info("Using In-Memory database adapter")
+    
+    def initialize(self):
+        """Initialize the in-memory database"""
+        if not InMemoryAdapter._initialized:
+            InMemoryAdapter._sites = []
+            InMemoryAdapter._initialized = True
+            logger.info("In-Memory database initialized")
+    
+    def get_all_sites(self):
+        """Get all Nike sites"""
+        return InMemoryAdapter._sites
+    
+    def get_site_by_id(self, site_id):
+        """Get a Nike site by ID"""
+        for site in InMemoryAdapter._sites:
+            if str(site['id']) == str(site_id):
+                return site
+        return None
+    
+    def add_site(self, site_data):
+        """Add a new Nike site"""
+        # Generate a new ID
+        if InMemoryAdapter._sites:
+            max_id = max(int(site['id']) for site in InMemoryAdapter._sites if 'id' in site)
+            new_id = str(max_id + 1)
+        else:
+            new_id = "1"
+        
+        # Add ID to site data
+        site_data['id'] = new_id
+        
+        # Add to sites list
+        InMemoryAdapter._sites.append(site_data)
+        
+        return new_id
+    
+    def update_site(self, site_id, site_data):
+        """Update an existing Nike site"""
+        for i, site in enumerate(InMemoryAdapter._sites):
+            if str(site['id']) == str(site_id):
+                # Update the site
+                InMemoryAdapter._sites[i].update(site_data)
+                return True
+        return False
+    
+    def delete_site(self, site_id):
+        """Delete a Nike site"""
+        for i, site in enumerate(InMemoryAdapter._sites):
+            if str(site['id']) == str(site_id):
+                # Remove the site
+                InMemoryAdapter._sites.pop(i)
+                return True
+        return False
+    
+    def import_sites(self, sites):
+        """Import multiple sites at once"""
+        # Clear existing sites
+        InMemoryAdapter._sites = []
+        
+        # Add new sites with IDs
+        for i, site in enumerate(sites):
+            site_copy = site.copy()
+            site_copy['id'] = str(i + 1)
+            InMemoryAdapter._sites.append(site_copy)
+        
+        logger.info(f"Imported {len(sites)} sites into In-Memory database")
+        return len(sites)
+
 class SQLiteAdapter(DatabaseAdapter):
     """SQLite database adapter for local development"""
     
@@ -364,11 +441,8 @@ class VercelKVAdapter(DatabaseAdapter):
 def get_db():
     """Get the appropriate database adapter based on the environment"""
     if os.environ.get('VERCEL_ENV') == 'production':
-        try:
-            return VercelKVAdapter()
-        except Exception as e:
-            logger.error(f"Failed to initialize Vercel KV adapter: {str(e)}")
-            logger.warning("Falling back to SQLite adapter")
-            return SQLiteAdapter()
+        # Use InMemoryAdapter for Vercel production environment
+        # This can be changed to VercelKVAdapter when ready to use Vercel KV
+        return InMemoryAdapter()
     else:
         return SQLiteAdapter() 

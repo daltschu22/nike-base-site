@@ -10,12 +10,12 @@ The Nike Missile Base Map is a Flask-based web application that:
 - Shows information about each site when clicked
 - Allows filtering of sites by state and site type
 - Provides historical context about the Nike missile system
-- Scrapes data from Wikipedia to populate the database
+- Automatically scrapes data from Wikipedia to populate the database on first run
 
 ## Features
 
 - Interactive Google Maps integration
-- Data scraping from Wikipedia
+- Automatic data scraping from Wikipedia
 - Filtering and search capabilities
 - Responsive design for desktop and mobile
 - Detailed information about each missile site
@@ -127,16 +127,22 @@ npm i -g vercel
 
 ### Database Considerations
 
-When deploying to Vercel:
-- For development, the application uses SQLite
-- For production on Vercel, the application uses Vercel KV for data storage
-- The application will automatically detect the environment and use the appropriate database adapter
+The application uses different database adapters depending on the environment:
+
+- For local development: SQLite database
+- For Vercel deployment: In-memory database (data will be lost on server restarts)
+
+The application includes code for Vercel KV integration, which can be enabled later for persistent storage:
+
+1. Uncomment the vercel-kv dependency in requirements.txt
+2. Update the get_db() function in app/database.py to use VercelKVAdapter
+3. Set up Vercel KV in your Vercel project and add the required environment variables
 
 ## Usage
 
 1. Start the application using one of the methods above
 2. Open your browser and navigate to http://localhost:5000
-3. Click the "Import Data" button to fetch Nike missile site data from Wikipedia
+3. The application will automatically load Nike missile site data from Wikipedia on first run
 4. Explore the map and click on markers to view site details
 5. Use the filters panel to narrow down sites by state or site type
 

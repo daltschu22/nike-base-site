@@ -19,12 +19,31 @@ def create_app():
         # Import parts of our application
         from . import routes
         from .database import get_db
+        from .scraper import scrape_nike_sites
         
         try:
             # Initialize the database
             db_adapter = get_db()
             db_adapter.initialize()
             logger.info("Database initialized successfully")
+            
+            # Check if there's data in the database
+            sites = db_adapter.get_all_sites()
+            if not sites:
+                logger.info("No Nike missile sites found in database. Loading data automatically...")
+                try:
+                    # Scrape data from Wikipedia
+                    sites_data = scrape_nike_sites()
+                    if sites_data:
+                        # Import data into database
+                        imported_count = db_adapter.import_sites(sites_data)
+                        logger.info(f"Successfully imported {imported_count} Nike missile sites on startup.")
+                    else:
+                        logger.warning("No data found during automatic scraping.")
+                except Exception as e:
+                    logger.error(f"Error during automatic data import: {str(e)}")
+            else:
+                logger.info(f"Found {len(sites)} Nike missile sites in database.")
         except Exception as e:
             logger.error(f"Error initializing database: {str(e)}")
 

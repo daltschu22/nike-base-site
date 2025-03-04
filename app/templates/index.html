@@ -81,14 +81,7 @@
             <h1 class="mb-4">Nike Missile Base Map</h1>
             <p class="lead">Explore the locations of Nike missile sites across the United States. Click on a marker to view details about each site.</p>
             
-            <div class="d-flex justify-content-end mb-3">
-                <button id="import-data" class="btn btn-primary me-2">
-                    <i class="fas fa-download"></i> Import Data
-                </button>
-                <button id="clear-data" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Clear Data
-                </button>
-            </div>
+            <!-- Admin buttons removed - data is loaded automatically -->
             
             <div id="map-container">
                 <div id="filters">
@@ -176,7 +169,7 @@
                     
                     // Show message if no sites found
                     if (sites.length === 0) {
-                        alert("No Nike missile sites found in the database. Please import data first.");
+                        alert("No Nike missile sites found in the database.");
                     }
                 } else {
                     console.error("Error loading sites:", data.error);
@@ -271,64 +264,6 @@
         loadSites();
     }
     
-    // Import data from Wikipedia
-    function importData() {
-        if (!confirm("This will import Nike missile site data from Wikipedia. Continue?")) {
-            return;
-        }
-        
-        showLoading(true);
-        
-        fetch('/api/import-data', {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                loadSites();
-            } else {
-                alert(`Error: ${data.message || data.error}`);
-            }
-            
-            showLoading(false);
-        })
-        .catch(error => {
-            console.error("Error importing data:", error);
-            alert("An error occurred while importing data. Please try again.");
-            showLoading(false);
-        });
-    }
-    
-    // Clear all data
-    function clearData() {
-        if (!confirm("This will delete all Nike missile site data from the database. Continue?")) {
-            return;
-        }
-        
-        showLoading(true);
-        
-        fetch('/api/clear-data', {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                loadSites();
-            } else {
-                alert(`Error: ${data.error}`);
-            }
-            
-            showLoading(false);
-        })
-        .catch(error => {
-            console.error("Error clearing data:", error);
-            alert("An error occurred while clearing data. Please try again.");
-            showLoading(false);
-        });
-    }
-    
     // Show or hide loading indicator
     function showLoading(show) {
         document.getElementById("loading").style.display = show ? "block" : "none";
@@ -360,8 +295,6 @@
         loadSites();
         
         // Set up event listeners
-        document.getElementById("import-data").addEventListener("click", importData);
-        document.getElementById("clear-data").addEventListener("click", clearData);
         document.getElementById("apply-filters").addEventListener("click", applyFilters);
         document.getElementById("reset-filters").addEventListener("click", resetFilters);
         document.getElementById("close-info").addEventListener("click", closeSiteInfo);
@@ -417,8 +350,6 @@
         loadSites();
         
         // Set up event listeners
-        document.getElementById("import-data").addEventListener("click", importData);
-        document.getElementById("clear-data").addEventListener("click", clearData);
         document.getElementById("apply-filters").addEventListener("click", applyFilters);
         document.getElementById("reset-filters").addEventListener("click", resetFilters);
         document.getElementById("close-info").addEventListener("click", closeSiteInfo);
