@@ -93,14 +93,6 @@
                             <!-- States will be populated dynamically -->
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="site-type-filter" class="form-label">Site Type:</label>
-                        <select id="site-type-filter" class="form-select form-select-sm">
-                            <option value="">All Types</option>
-                            <option value="Launch Area">Launch Area</option>
-                            <option value="Control Area">Control Area</option>
-                        </select>
-                    </div>
                     <button id="apply-filters" class="btn btn-sm btn-primary">Apply Filters</button>
                     <button id="reset-filters" class="btn btn-sm btn-secondary">Reset</button>
                 </div>
@@ -228,7 +220,6 @@
     // Apply filters to the map
     function applyFilters() {
         const stateFilter = document.getElementById("state-filter").value;
-        const siteTypeFilter = document.getElementById("site-type-filter").value;
         
         // Clear existing markers
         clearMarkers();
@@ -236,32 +227,80 @@
         // Filter sites
         const filteredSites = sites.filter(site => {
             let matchesState = true;
-            let matchesType = true;
             
             if (stateFilter) {
                 matchesState = site.state && site.state.includes(stateFilter);
             }
             
-            if (siteTypeFilter) {
-                matchesType = site.site_type === siteTypeFilter;
-            }
-            
-            return matchesState && matchesType;
+            return matchesState;
         });
         
         // Add markers for filtered sites
         filteredSites.forEach(site => {
             addMarker(site);
         });
+        
+        // Recenter map on filtered sites if there are any
+        if (filteredSites.length > 0) {
+            recenterMapOnSites(filteredSites);
+        }
+    }
+    
+    // Recenter the map on a set of sites
+    function recenterMapOnSites(sitesToCenter) {
+        if (sitesToCenter.length === 0) return;
+        
+        // Calculate bounds of all filtered sites
+        let bounds;
+        
+        if (useGoogleMaps) {
+            bounds = new google.maps.LatLngBounds();
+            
+            sitesToCenter.forEach(site => {
+                bounds.extend({
+                    lat: parseFloat(site.latitude) || 0,
+                    lng: parseFloat(site.longitude) || 0
+                });
+            });
+            
+            // Fit the map to these bounds
+            map.fitBounds(bounds);
+            
+            // If we only have one site, zoom in a bit more
+            if (sitesToCenter.length === 1) {
+                map.setZoom(10);
+            }
+        } else {
+            // For Leaflet
+            const latLngs = sitesToCenter.map(site => [
+                parseFloat(site.latitude) || 0,
+                parseFloat(site.longitude) || 0
+            ]);
+            
+            bounds = L.latLngBounds(latLngs);
+            map.fitBounds(bounds);
+            
+            // If we only have one site, zoom in a bit more
+            if (sitesToCenter.length === 1) {
+                map.setZoom(10);
+            }
+        }
     }
     
     // Reset filters
     function resetFilters() {
         document.getElementById("state-filter").value = "";
-        document.getElementById("site-type-filter").value = "";
         
         // Reload all sites
         loadSites();
+        
+        // Reset map view to the US
+        if (useGoogleMaps) {
+            map.setCenter({ lat: 39.8283, lng: -98.5795 });
+            map.setZoom(4);
+        } else {
+            map.setView([39.8283, -98.5795], 4);
+        }
     }
     
     // Show or hide loading indicator
