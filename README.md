@@ -41,7 +41,7 @@ cd nike-base-site
 Create a `.env` file in the project root with the following variables:
 
 ```
-FLASK_APP=run.py
+FLASK_APP=app.py
 FLASK_ENV=development
 SECRET_KEY=your-secret-key
 GOOGLE_MAPS_API_KEY=your-google-maps-api-key
@@ -85,7 +85,7 @@ pip install -r requirements.txt
 3. Run the application:
 
 ```bash
-flask run
+python app.py
 ```
 
 ## Deployment to Vercel
@@ -119,7 +119,6 @@ npm i -g vercel
 ```
 
 3. Set up environment variables in the Vercel dashboard:
-   - `FLASK_APP`: run.py
    - `FLASK_ENV`: production
    - `SECRET_KEY`: your-secret-key
    - `GOOGLE_MAPS_API_KEY`: your-google-maps-api-key
@@ -179,9 +178,11 @@ nike-base-site/
 │       ├── base.html
 │       ├── index.html
 │       └── about.html
+├── api/
+│   └── index.py
+├── app.py
 ├── config.py
 ├── requirements.txt
-├── run.py
 ├── Dockerfile
 ├── podman.sh
 ├── vercel.sh

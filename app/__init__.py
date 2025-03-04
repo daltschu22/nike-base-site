@@ -11,7 +11,9 @@ def create_app():
     """Initialize the core application."""
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object(get_config())
-
+    
+    # No filesystem operations - we'll use in-memory storage only
+    # This is important for Vercel deployment which has a read-only filesystem
 
     with app.app_context():
         # Import parts of our application
@@ -45,4 +47,7 @@ def create_app():
         except Exception as e:
             logger.error(f"Error initializing database: {str(e)}")
 
-        return app 
+        return app
+
+# Create the application instance
+app = create_app() 
