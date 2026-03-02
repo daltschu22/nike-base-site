@@ -6,7 +6,7 @@ Interactive web app that maps Nike missile sites across the US, with data scrape
 
 - FastAPI
 - Jinja2 templates
-- SQLite
+- SQLite (persistent via Railway Volume)
 - BeautifulSoup scraper
 
 ## Local Run
@@ -34,27 +34,35 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 Open `http://localhost:8000`.
 
-## Render Deployment
+## Railway Deployment (Persistent SQLite)
 
-This repo is configured for Render with the same settings as the official FastAPI example.
+This repo is configured for Railway with:
 
-### Option A: Manual service setup
+- [`railway.toml`](./railway.toml)
+- [`Procfile`](./Procfile)
 
-Use these values when creating a Render Web Service:
+### 1. Create service
 
-- Language: `Python 3`
-- Build Command: `pip install -r requirements.txt`
-- Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- New Project -> Deploy from GitHub repo.
 
-Set environment variables in Render as needed:
+### 2. Attach a Volume
+
+- In Railway service settings, add a Volume.
+- Mount path example: `/data`.
+
+### 3. Set environment variables
 
 - `APP_ENV=production`
+- `DATABASE_PATH=/data/nike_sites.db`
 - `GOOGLE_MAPS_API_KEY=...` (optional; app falls back to Leaflet/OpenStreetMap if missing)
-- `DATABASE_PATH=/tmp/nike_sites.db` (default on Render if omitted)
 
-### Option B: Blueprint (`render.yaml`)
+### 4. Deploy
 
-This repo includes `render.yaml`, so you can deploy as a Blueprint directly from GitHub.
+Railway will run:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port $PORT
+```
 
 ## API Endpoints
 
@@ -66,4 +74,4 @@ This repo includes `render.yaml`, so you can deploy as a Blueprint directly from
 ## Notes
 
 - Data is auto-imported from Wikipedia at startup if the database is empty.
-- Render free instances use ephemeral storage unless you attach a persistent disk.
+- Persistence depends on using a mounted Railway Volume for `DATABASE_PATH`.

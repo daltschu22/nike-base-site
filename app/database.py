@@ -101,15 +101,13 @@ class InMemoryAdapter(DatabaseAdapter):
 
 
 class SQLiteAdapter(DatabaseAdapter):
-    """SQLite adapter for local and Render deployments."""
+    """SQLite adapter for local and Railway deployments."""
 
     def __init__(self, db_path=None):
         if db_path is None:
             configured_path = os.environ.get('DATABASE_PATH')
             if configured_path:
                 self.db_path = configured_path
-            elif os.environ.get('RENDER') == 'true':
-                self.db_path = '/tmp/nike_sites.db'
             else:
                 self.db_path = os.path.join(os.getcwd(), 'nike_sites.db')
         else:
