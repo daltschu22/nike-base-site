@@ -39,5 +39,5 @@ config = {
 
 # Get configuration based on environment
 def get_config():
-    env = os.environ.get('FLASK_ENV', 'default')
+    env = os.environ.get('APP_ENV') or os.environ.get('FLASK_ENV', 'default')
     return config.get(env, config['default']) 

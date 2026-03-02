@@ -3,7 +3,6 @@ import json
 import logging
 import sqlite3
 from abc import ABC, abstractmethod
-from flask import current_app
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -129,11 +128,19 @@ class SQLiteAdapter(DatabaseAdapter):
     
     def __init__(self, db_path=None):
         if db_path is None:
-            # Use the instance folder for the database
-            self.db_path = os.path.join(current_app.instance_path, 'nike_sites.db')
-            # Don't try to create directories - they should already exist in local dev
+            configured_path = os.environ.get('DATABASE_PATH')
+            if configured_path:
+                self.db_path = configured_path
+            elif os.environ.get('RENDER') == 'true':
+                self.db_path = '/tmp/nike_sites.db'
+            else:
+                self.db_path = os.path.join(os.getcwd(), 'nike_sites.db')
         else:
             self.db_path = db_path
+
+        db_dir = os.path.dirname(self.db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
         
         logger.info(f"Using SQLite database at {self.db_path}")
     
