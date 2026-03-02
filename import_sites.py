@@ -9,10 +9,11 @@ from app.scraper import scrape_nike_sites
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def import_to_sqlite(sites, db_path='instance/nike_sites.db'):
+def import_to_sqlite(sites, db_path='nike_sites.db'):
     """Import Nike sites into SQLite database"""
-    # Ensure the instance directory exists
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    db_dir = os.path.dirname(db_path)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
     
     # Connect to the database
     conn = sqlite3.connect(db_path)

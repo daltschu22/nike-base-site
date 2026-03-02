@@ -6,7 +6,7 @@ Interactive web app that maps Nike missile sites across the US, with data scrape
 
 - FastAPI
 - Jinja2 templates
-- SQLite (default) or in-memory (Vercel mode)
+- SQLite
 - BeautifulSoup scraper
 
 ## Local Run
