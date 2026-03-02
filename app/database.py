@@ -101,7 +101,7 @@ class InMemoryAdapter(DatabaseAdapter):
 
 
 class SQLiteAdapter(DatabaseAdapter):
-    """SQLite adapter for local and Railway deployments."""
+    """SQLite adapter for local and volume-backed deployments."""
 
     def __init__(self, db_path=None):
         if db_path is None:

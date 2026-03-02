@@ -6,7 +6,7 @@ Interactive web app that maps Nike missile sites across the US, with data scrape
 
 - FastAPI
 - Jinja2 templates
-- SQLite (persistent via Railway Volume)
+- SQLite (persistent via mounted volume)
 - BeautifulSoup scraper
 
 ## Local Run
@@ -34,21 +34,15 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 Open `http://localhost:8000`.
 
-## Railway Deployment (Persistent SQLite)
-
-This repo is configured for Railway with:
-
-- [`railway.toml`](./railway.toml)
-- [`Procfile`](./Procfile)
+## Deployment (Coolify / Generic)
 
 ### 1. Create service
 
-- New Project -> Deploy from GitHub repo.
+- Deploy from this Git repo.
 
-### 2. Attach a Volume
+### 2. Attach a volume
 
-- In Railway service settings, add a Volume.
-- Mount path example: `/data`.
+- Add a persistent volume and mount it at `/data`.
 
 ### 3. Set environment variables
 
@@ -56,9 +50,7 @@ This repo is configured for Railway with:
 - `DATABASE_PATH=/data/nike_sites.db`
 - `GOOGLE_MAPS_API_KEY=...` (optional; app falls back to Leaflet/OpenStreetMap if missing)
 
-### 4. Deploy
-
-Railway will run:
+### 4. Start command
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -74,4 +66,4 @@ uvicorn main:app --host 0.0.0.0 --port $PORT
 ## Notes
 
 - Data is auto-imported from Wikipedia at startup if the database is empty.
-- Persistence depends on using a mounted Railway Volume for `DATABASE_PATH`.
+- Persistence depends on using a mounted volume for `DATABASE_PATH`.
