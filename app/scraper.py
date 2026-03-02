@@ -91,7 +91,7 @@ def scrape_nike_sites():
     try:
         headers = {
             # Wikimedia can reject generic/default clients; identify this app explicitly.
-            "User-Agent": "nike-base-site/1.0 (+https://render.com)",
+            "User-Agent": "nike-base-site/1.0 (+https://github.com/daltschu22/nike-base-site)",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
         }
