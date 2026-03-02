@@ -9,8 +9,7 @@ class Config:
     """Base configuration."""
 
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-please-change-in-production')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///nike_sites.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    DATABASE_PATH = os.environ.get('DATABASE_PATH', 'nike_sites.db')
     GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
     DEBUG = False
     TESTING = False
@@ -26,7 +25,7 @@ class TestingConfig(Config):
     """Testing configuration."""
 
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///test.db'
+    DATABASE_PATH = 'test.db'
 
 
 class ProductionConfig(Config):
