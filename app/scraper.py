@@ -89,7 +89,13 @@ def scrape_nike_sites():
     logger.info(f"Fetching data from {url}")
     
     try:
-        response = requests.get(url)
+        headers = {
+            # Wikimedia can reject generic/default clients; identify this app explicitly.
+            "User-Agent": "nike-base-site/1.0 (+https://render.com)",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()  # Raise exception for HTTP errors
         
         soup = BeautifulSoup(response.text, 'html.parser')
