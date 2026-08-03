@@ -76,8 +76,9 @@ def index(request: Request) -> HTMLResponse:
         logger.warning("Google Maps API key not set. Map functionality will use Leaflet fallback.")
 
     return templates.TemplateResponse(
-        "index.html",
-        {
+        request=request,
+        name="index.html",
+        context={
             "request": request,
             "google_maps_api_key": google_maps_api_key,
             "now": datetime.datetime.now(),
@@ -88,8 +89,9 @@ def index(request: Request) -> HTMLResponse:
 @app.get("/about", response_class=HTMLResponse)
 def about(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
-        "about.html",
-        {
+        request=request,
+        name="about.html",
+        context={
             "request": request,
             "now": datetime.datetime.now(),
         },
