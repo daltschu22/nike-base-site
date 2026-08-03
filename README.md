@@ -49,6 +49,7 @@ Open `http://localhost:8000`.
 - `APP_ENV=production`
 - `DATABASE_PATH=/data/nike_sites.db`
 - `GOOGLE_MAPS_API_KEY=...` (optional; app falls back to Leaflet/OpenStreetMap if missing)
+- `ADMIN_API_TOKEN=...` (required to use the data import and clear endpoints)
 
 ### 4. Start command
 
@@ -60,10 +61,11 @@ uvicorn main:app --host 0.0.0.0 --port $PORT
 
 - `GET /api/sites`
 - `GET /api/sites/{site_id}`
-- `POST /api/import-data`
-- `POST /api/clear-data`
+- `POST /api/import-data` (requires `Authorization: Bearer $ADMIN_API_TOKEN`)
+- `POST /api/clear-data` (requires `Authorization: Bearer $ADMIN_API_TOKEN`)
 
 ## Notes
 
 - Data is auto-imported from Wikipedia at startup if the database is empty.
 - Persistence depends on using a mounted volume for `DATABASE_PATH`.
+- Administrative endpoints fail closed with HTTP 503 if `ADMIN_API_TOKEN` is not configured.

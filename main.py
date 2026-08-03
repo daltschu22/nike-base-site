@@ -1,8 +1,9 @@
 import datetime
 import logging
 import os
+import secrets
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -19,6 +20,30 @@ app = FastAPI(title="Nike Missile Base Map")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+
+def require_admin(authorization: str | None = Header(default=None)) -> None:
+    """Require a bearer token for operations that modify persisted site data."""
+    expected_token = os.environ.get("ADMIN_API_TOKEN", "")
+    if not expected_token:
+        logger.error("ADMIN_API_TOKEN is not configured; rejecting administrative request")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Administrative operations are not configured",
+        )
+
+    scheme, separator, supplied_token = (authorization or "").partition(" ")
+    if (
+        not separator
+        or scheme.lower() != "bearer"
+        or not supplied_token
+        or not secrets.compare_digest(supplied_token, expected_token)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing administrative token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 @app.on_event("startup")
@@ -109,7 +134,7 @@ def get_site(site_id: str) -> JSONResponse:
         return JSONResponse({"success": False, "error": str(exc)}, status_code=500)
 
 
-@app.post("/api/import-data")
+@app.post("/api/import-data", dependencies=[Depends(require_admin)])
 def import_data() -> JSONResponse:
     try:
         db_adapter = get_db()
@@ -134,7 +159,7 @@ def import_data() -> JSONResponse:
         return JSONResponse({"success": False, "error": str(exc)}, status_code=500)
 
 
-@app.post("/api/clear-data")
+@app.post("/api/clear-data", dependencies=[Depends(require_admin)])
 def clear_data() -> JSONResponse:
     try:
         db_adapter = get_db()
