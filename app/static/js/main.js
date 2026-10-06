@@ -10,8 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-link');
 
     navLinks.forEach(link => {
-        if (link.getAttribute('href') === currentLocation) {
+        if (new URL(link.href, window.location.origin).pathname === currentLocation) {
             link.classList.add('bg-white/15', 'text-white');
+            link.setAttribute('aria-current', 'page');
         }
     });
 

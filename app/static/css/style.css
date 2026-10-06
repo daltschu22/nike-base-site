@@ -22,3 +22,37 @@
 .leaflet-control-zoom a {
     border-radius: 8px;
 }
+
+[hidden] { display: none !important; }
+button:disabled, select:disabled { opacity: 0.6; cursor: wait; }
+#map-shell { position: relative; isolation: isolate; }
+#map {
+    height: min(74vh, 760px);
+    min-height: 420px;
+    width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+    z-index: 0;
+}
+#site-info {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    z-index: 1100;
+    width: min(430px, calc(100% - 28px));
+    max-height: 60%;
+    overflow: auto;
+    overflow-wrap: anywhere;
+}
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1200;
+}
+@media (max-width: 768px) {
+    #map { height: 60vh; min-height: 360px; }
+    #site-info { position: relative; bottom: auto; right: auto; width: 100%; max-height: none; margin-top: 16px; }
+    nav { flex-wrap: wrap; gap: 12px; }
+}
