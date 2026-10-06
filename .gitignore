@@ -318,3 +318,6 @@ venv.bak/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Frontend build dependencies (generated CSS is tracked).
+node_modules/

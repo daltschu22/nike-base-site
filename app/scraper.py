@@ -1,196 +1,178 @@
+"""Extract control and launch locations from Wikipedia's US site tables."""
+import copy
+import logging
+import math
+import re
+from urllib.parse import quote
+
 import requests
 from bs4 import BeautifulSoup
-import re
-import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+SOURCE_URL = 'https://en.wikipedia.org/wiki/List_of_Nike_missile_sites'
+US_STATES = (
+    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+    'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+    'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+    'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+    'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+    'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+    'Wisconsin', 'Wyoming', 'District of Columbia', 'Puerto Rico', 'Guam', 'American Samoa',
+    'U.S. Virgin Islands', 'Northern Mariana Islands',
+)
+NUMBER = r'[+-]?\d+(?:\.\d+)?'
+
+
+def _valid_coordinates(latitude, longitude):
+    if math.isfinite(latitude) and math.isfinite(longitude) and -90 <= latitude <= 90 and -180 <= longitude <= 180:
+        return latitude, longitude
+    return None, None
+
 
 def extract_coordinates(coord_text):
-    """
-    Extract latitude and longitude from Wikipedia coordinate format.
-    Example inputs: 
-    - "41°15′36″N 73°58′42″W" (DMS format)
-    - "55.90806; 12.43083" (decimal format with semicolon)
-    - "55.90806, 12.43083" (decimal format with comma)
-    """
-    try:
-        # First, try the simple decimal format with semicolon separator (most common in the data)
-        semicolon_pattern = r'(\d+\.\d+)\s*;\s*(-?\d+\.\d+)'
-        semicolon_match = re.search(semicolon_pattern, coord_text)
-        
-        if semicolon_match:
-            latitude, longitude = semicolon_match.groups()
-            return float(latitude), float(longitude)
-            
-        # Pattern for degrees, minutes, seconds format
-        dms_pattern = r'(\d+)°(\d+)′(\d+)″([NS])\s+(\d+)°(\d+)′(\d+)″([EW])'
-        dms_match = re.search(dms_pattern, coord_text)
-        
-        if dms_match:
-            lat_deg, lat_min, lat_sec, lat_dir, lon_deg, lon_min, lon_sec, lon_dir = dms_match.groups()
-            
-            # Convert to decimal degrees
-            latitude = float(lat_deg) + float(lat_min)/60 + float(lat_sec)/3600
-            longitude = float(lon_deg) + float(lon_min)/60 + float(lon_sec)/3600
-            
-            # Apply direction
-            if lat_dir == 'S':
-                latitude = -latitude
-            if lon_dir == 'W':
-                longitude = -longitude
-                
-            return latitude, longitude
-        else:
-            # Try general decimal format (comma or space separated)
-            decimal_pattern = r'(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)'
-            decimal_match = re.search(decimal_pattern, coord_text)
-            
-            if decimal_match:
-                latitude, longitude = decimal_match.groups()
-                return float(latitude), float(longitude)
-            
-            logger.warning(f"Could not parse coordinates: {coord_text}")
-            return None, None
-    except Exception as e:
-        logger.error(f"Error extracting coordinates from '{coord_text}': {str(e)}")
+    if not isinstance(coord_text, str):
         return None, None
+    text = coord_text.replace('\ufeff', '').strip()
+    # Match direction formats first so a south/west hemisphere sign is not lost.
+    component = r'(\d+(?:\.\d+)?)\s*°\s*(?:(\d+(?:\.\d+)?)\s*[′\']\s*)?(?:(\d+(?:\.\d+)?)\s*[″"]\s*)?'
+    match = re.search(component + r'([NS])\s*[,;]?\s*' + component + r'([EW])', text, re.I)
+    if match:
+        lat_deg, lat_min, lat_sec, lat_dir, lon_deg, lon_min, lon_sec, lon_dir = match.groups()
+        lat_min, lat_sec, lon_min, lon_sec = (float(x or 0) for x in (lat_min, lat_sec, lon_min, lon_sec))
+        if any(x >= 60 for x in (lat_min, lat_sec, lon_min, lon_sec)):
+            return None, None
+        lat = (float(lat_deg) + lat_min / 60 + lat_sec / 3600) * (-1 if lat_dir.upper() == 'S' else 1)
+        lon = (float(lon_deg) + lon_min / 60 + lon_sec / 3600) * (-1 if lon_dir.upper() == 'W' else 1)
+        return _valid_coordinates(lat, lon)
+    match = re.search(rf'(?<![\d.+-])({NUMBER})\s*(?:[;,]\s*|\s+)({NUMBER})(?![\d.])', text)
+    if match:
+        return _valid_coordinates(*(float(value) for value in match.groups()))
+    return None, None
+
+
+def _states_in(text):
+    # Prefer longer names to avoid matching Virginia inside West Virginia.
+    found = []
+    remaining = text
+    for state in sorted(US_STATES, key=len, reverse=True):
+        pattern = rf'(?<!\w){re.escape(state)}(?!\w)'
+        if re.search(pattern, remaining, re.I):
+            found.append(state)
+            remaining = re.sub(pattern, '', remaining, flags=re.I)
+    return found
+
 
 def is_us_state(state_name):
-    """
-    Check if the given state name is a US state or territory.
-    """
-    us_states = [
-        "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
-        "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", 
-        "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", 
-        "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", 
-        "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", 
-        "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
-        "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", 
-        "Wisconsin", "Wyoming", "District of Columbia", "Puerto Rico", "Guam", "American Samoa",
-        "U.S. Virgin Islands", "Northern Mariana Islands"
-    ]
-    
-    # Clean up the state name for comparison
-    clean_state = re.sub(r'\[\d+\]', '', state_name).strip()
-    
-    # Check if it's in our list of US states/territories
-    return any(state.lower() in clean_state.lower() for state in us_states)
+    return bool(_states_in(state_name))
 
-def scrape_nike_sites():
-    """
-    Scrape Nike missile site data from Wikipedia.
-    Returns a list of dictionaries with site information.
-    Focus on US sites only.
-    """
-    url = "https://en.wikipedia.org/wiki/List_of_Nike_missile_sites"
-    logger.info(f"Fetching data from {url}")
-    
-    try:
-        headers = {
-            # Wikimedia can reject generic/default clients; identify this app explicitly.
-            "User-Agent": "nike-base-site/1.0 (+https://github.com/daltschu22/nike-base-site)",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-        }
-        response = requests.get(url, headers=headers, timeout=30)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        sites = []
-        
-        # Find all tables with class wikitable
-        tables = soup.find_all('table', class_='wikitable')
-        
-        # Process each table (each state has its own table)
-        for table in tables:
-            # Try to find the state name from the preceding heading
-            state_heading = table.find_previous(['h2', 'h3', 'h4'])
-            state = state_heading.get_text().strip() if state_heading else "Unknown"
-            
-            # Remove any "[edit]" text that might be in the heading
-            state = re.sub(r'\[\w+\]', '', state).strip()
-            
-            # Skip non-US states
-            if not is_us_state(state):
-                logger.info(f"Skipping non-US location: {state}")
+
+def _clean_text(element, *, remove_coordinates=False):
+    element = copy.deepcopy(element)
+    for node in element.select('sup, .mw-editsection'):
+        node.decompose()
+    if remove_coordinates:
+        for node in element.select('.geo-inline, .geo-default, .geo-nondefault, .geo-multi-punct, .geo, .geo-dec, .geo-dms'):
+            node.decompose()
+    return re.sub(r'\s+', ' ', element.get_text(' ', strip=True)).replace('\ufeff', '').strip()
+
+
+def _table_rows(table):
+    """Expand row/column spans without absorbing rows from nested tables."""
+    pending = {}
+    for row in table.find_all('tr'):
+        if row.find_parent('table') is not table:
+            continue
+        cells, column = [], 0
+        for cell in row.find_all(['td', 'th'], recursive=False):
+            while column in pending:
+                node, count = pending.pop(column)
+                cells.append(node)
+                if count > 1:
+                    pending[column] = (node, count - 1)
+                column += 1
+            for _ in range(int(cell.get('colspan', 1))):
+                cells.append(cell)
+                if int(cell.get('rowspan', 1)) > 1:
+                    pending[column] = (cell, int(cell['rowspan']) - 1)
+                column += 1
+        while column in pending:
+            node, count = pending.pop(column)
+            cells.append(node)
+            if count > 1:
+                pending[column] = (node, count - 1)
+            column += 1
+        yield cells
+
+
+def parse_nike_sites(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    sites, seen = [], set()
+    for table in soup.select('table.wikitable'):
+        country_heading = table.find_previous('h2')
+        state_heading = table.find_previous(['h3', 'h4'])
+        if not country_heading or _clean_text(country_heading) != 'United States' or not state_heading:
+            continue
+        state = _clean_text(state_heading)
+        if not is_us_state(state):
+            continue
+        rows = iter(_table_rows(table))
+        headers = [_clean_text(cell).lower() for cell in next(rows, [])]
+        if not headers or headers[0] not in ('site name', 'code & location'):
+            continue
+        location_column = headers.index('site location') if 'site location' in headers else 0
+        area_columns = [(i, 'Control' if header.startswith('control') else 'Launch')
+                        for i, header in enumerate(headers) if header.startswith(('control site', 'launch site'))]
+        for cells in rows:
+            if len(cells) < len(headers):
+                logger.debug('Skipping incomplete site row in %s', state)
                 continue
-                
-            logger.info(f"Processing sites for US state: {state}")
-            
-            # Process rows in the table
-            rows = table.find_all('tr')
-            
-            # Skip header row
-            for row in rows[1:]:
-                cells = row.find_all(['td', 'th'])
-                
-                # Skip rows with insufficient data
-                if len(cells) < 3:
-                    continue
-                
-                try:
-                    # Extract site information (column structure may vary)
-                    site_code = cells[0].get_text().strip()
-                    site_name = cells[1].get_text().strip() if len(cells) > 1 else ""
-                    
-                    # Look for coordinates in any cell
-                    coordinates = None
-                    description = ""
-                    
-                    for cell in cells:
-                        # Check for coordinates
-                        coord_span = cell.find('span', class_='geo')
-                        if coord_span:
-                            coordinates = coord_span.get_text().strip()
-                        
-                        # Collect text as potential description
-                        cell_text = cell.get_text().strip()
-                        if cell_text and len(cell_text) > len(description):
-                            description = cell_text
-                    
-                    # Skip entries without coordinates
-                    if not coordinates:
+            code_and_name = _clean_text(cells[0])
+            if not code_and_name:
+                continue
+            site_code = code_and_name.split(' ', 1)[0] if headers[0] == 'code & location' else code_and_name
+            location = _clean_text(cells[location_column])
+            explicit_states = _states_in(location)
+            site_state = explicit_states[0] if len(explicit_states) == 1 else state
+            for column, site_type in area_columns:
+                cell = cells[column]
+                for geo in cell.select('.geo'):
+                    latitude, longitude = extract_coordinates(geo.get_text(' ', strip=True))
+                    if latitude is None:
                         continue
-                    
-                    # Extract latitude and longitude
-                    latitude, longitude = extract_coordinates(coordinates)
-                    
-                    if latitude is None or longitude is None:
+                    identity = (site_code, site_type, latitude, longitude)
+                    if identity in seen:
                         continue
-                    
-                    # Create site entry
-                    site = {
+                    seen.add(identity)
+                    sites.append({
                         'site_code': site_code,
-                        'name': site_name,
-                        'state': state,
+                        'name': f'{location or site_code} — {site_type} area',
+                        'state': site_state,
                         'latitude': latitude,
                         'longitude': longitude,
-                        'description': description,
-                        'site_type': "Unknown",  # Would need more parsing to determine
-                        'status': "Unknown",     # Would need more parsing to determine
-                        'wiki_url': url
-                    }
-                    
-                    sites.append(site)
-                    logger.info(f"Extracted site: {site_code} - {site_name}")
-                
-                except Exception as e:
-                    logger.error(f"Error processing row: {str(e)}")
-                    continue
-        
-        logger.info(f"Extracted {len(sites)} Nike missile sites")
+                        'description': _clean_text(cell, remove_coordinates=True),
+                        'site_type': site_type,
+                        'status': 'Unknown',
+                        'wiki_url': f'{SOURCE_URL}#{quote(state.replace(" ", "_"), safe="/_")}',
+                    })
+    return sites
+
+
+def scrape_nike_sites():
+    try:
+        response = requests.get(SOURCE_URL, headers={
+            'User-Agent': 'nike-base-site/1.0 (+https://github.com/daltschu22/nike-base-site)',
+            'Accept': 'text/html',
+        }, timeout=30)
+        response.raise_for_status()
+        sites = parse_nike_sites(response.text)
+        logger.info('Extracted %s Nike site locations', len(sites))
         return sites
-    
-    except Exception as e:
-        logger.error(f"Error scraping Nike sites: {str(e)}")
+    except requests.RequestException:
+        logger.exception('Failed to fetch Nike sites')
         return []
 
-if __name__ == "__main__":
-    # Test the scraper
-    sites = scrape_nike_sites()
-    print(f"Found {len(sites)} sites")
-    for i, site in enumerate(sites[:5]):
-        print(f"Site {i+1}: {site['site_code']} - {site['name']} ({site['latitude']}, {site['longitude']})") 
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    print(f'Found {len(scrape_nike_sites())} site locations')
